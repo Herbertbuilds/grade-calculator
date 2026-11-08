@@ -102,3 +102,57 @@ function loadState() {
 
 const uid = () =>
     Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+
+/* ---------- Helpers ---------- */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+function esc(str) {
+    return String(str).replace(
+        /[&<>"']/g,
+        (m) =>
+            ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+            })[m],
+    );
+}
+
+const fmt1 = (n) => Math.round(n * 10) / 10;
+const fmtPct = (n) => (n == null ? "—" : `${fmt1(n)}%`);
+
+const examOf = (course) => course.assignments.find((a) => a.exam);
+const isExamCourse = (course) => course.type === "exam";
+/** Coursework share of the final grade: 40% for exam courses, 100% otherwise. */
+const cwShare = (course) => (isExamCourse(course) ? 40 : 100);
+
+/**
+ * Exam courses must always contain their 60%-weight final exam item.
+ * Restores it if it was ever deleted, so the 40/60 structure stays intact.
+ */
+function ensureExams() {
+    let changed = false;
+    for (const c of state.courses) {
+        if (isExamCourse(c) && !examOf(c)) {
+            c.assignments.push({
+                id: uid(),
+                name: "Final exam",
+                pct: null,
+                weight: 60,
+                exam: true,
+            });
+            changed = true;
+        }
+    }
+    if (changed) saveState();
+}
+
+/* Inline SVG icons (drawn in-house; no emoji, no icon library) */
+const ICONS = {
+    plus: `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>`,
+    edit: `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25ZM20.7 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>`,
+    trash: `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3.5 6h13L17.6 20a2 2 0 0 1-2 1.8H8.4A2 2 0 0 1 6.4 20L5.5 9ZM10 11v6.5h1.5V11H10Zm2.5 0v6.5H14V11h-1.5Z"/></svg>`,
+};
