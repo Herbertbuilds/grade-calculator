@@ -1,4 +1,4 @@
-/* ---------- 1. Design tokens ---------- */
+/* ---------- Design tokens ---------- */
 :root {
     --paper: #f1f2ed;
     --sheet: #fbfbf7;
@@ -50,7 +50,7 @@
     --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.55);
 }
 
-/* ---------- 2. Base & layout ---------- */
+/* ---------- Base & layout ---------- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -116,7 +116,7 @@ section {
     outline-offset: 2px;
 }
 
-/* ---------- 3. Header, buttons, inputs, stamps, tabs ---------- */
+/* ---------- Header, buttons, inputs, stamps, tabs ---------- */
 .site-header {
     position: sticky;
     top: 0;
@@ -399,4 +399,362 @@ input::placeholder {
 }
 .stamp-empty::after {
     display: none;
+}
+
+/* ---------- Semester transcript sheet ---------- */
+.sheet {
+    position: relative;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sheet);
+    box-shadow: var(--shadow-sm);
+    transition: background 0.25s ease;
+}
+/* The notebook margin line, ruled in by the red pen */
+.sheet::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 32px;
+    width: 2px;
+    background: var(--margin);
+    opacity: 0.4;
+}
+
+.transcript {
+    padding: 22px 20px 12px 52px;
+}
+
+.transcript-head {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+}
+.transcript-average {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.big-pct {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 2.6rem;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.transcript-info p {
+    font-size: 0.9rem;
+    color: var(--ink-2);
+    margin-top: 2px;
+    max-width: 52ch;
+}
+.transcript-info h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.ledger {
+    list-style: none;
+}
+.ledger-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+    padding: 13px 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.ledger li:last-child .ledger-row {
+    border-bottom: none;
+}
+.ledger-row:hover {
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.ledger-name {
+    font-weight: 600;
+    font-size: 0.98rem;
+    min-width: 0;
+}
+.ledger-term {
+    display: block;
+    font-weight: 400;
+    font-size: 0.78rem;
+    color: var(--ink-2);
+}
+.leader {
+    flex: 1 1 auto;
+    min-width: 20px;
+    border-bottom: 2px dotted var(--rule-2);
+    align-self: center;
+}
+.ledger-sub {
+    font-size: 0.78rem;
+    color: var(--ink-2);
+    flex: 0 0 auto;
+}
+.ledger-pct {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.25rem;
+    font-variant-numeric: tabular-nums;
+    flex: 0 0 auto;
+    min-width: 5.5ch;
+    text-align: right;
+}
+.ledger .delta {
+    flex: 0 0 3.2em;
+    text-align: right;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.delta.up {
+    color: var(--grade-a);
+}
+.delta.down {
+    color: var(--grade-f);
+}
+.delta.flat {
+    color: var(--ink-2);
+}
+
+/* ---------- Course sheets & assignment table ---------- */
+.course-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.course-card {
+    overflow: hidden;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sheet);
+    box-shadow: var(--shadow-sm);
+    transition: background 0.25s ease;
+    scroll-margin-top: 90px;
+}
+/* bring the margin rule onto these sheets too */
+.course-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 32px;
+    width: 2px;
+    background: var(--margin);
+    opacity: 0.4;
+    pointer-events: none;
+}
+.course-card {
+    position: relative;
+}
+
+.course-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 15px 18px 15px 52px;
+    cursor: pointer;
+    user-select: none;
+}
+.course-head:hover {
+    background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+.course-title {
+    flex: 1 1 200px;
+    min-width: 0;
+}
+.course-title h3 {
+    font-size: 1.08rem;
+    font-weight: 600;
+}
+.course-title .term {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--ink-2);
+}
+.course-grade {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 168px;
+    justify-content: flex-end;
+}
+.course-pct {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.45rem;
+    font-variant-numeric: tabular-nums;
+}
+.course-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.chevron {
+    transition: transform 0.25s ease;
+    color: var(--ink-2);
+    flex: 0 0 auto;
+}
+.course-card.open .chevron {
+    transform: rotate(180deg);
+}
+
+.course-body {
+    display: none;
+    padding: 4px 18px 18px 52px;
+}
+.course-card.open .course-body {
+    display: block;
+    animation: reveal 0.22s ease;
+}
+@keyframes reveal {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.method-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 4px 0 14px;
+}
+.weights-warn {
+    font-size: 0.8rem;
+    color: var(--margin);
+}
+.weights-warn::before {
+    content: "⚠ ";
+}
+
+/* Assignment table with ruled lines every field is editable in place */
+.assignment-list {
+    border-top: 1px solid var(--rule);
+}
+.table-head,
+.assign-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 1.5fr) 92px 100px 44px 44px;
+    gap: 10px;
+    align-items: center;
+}
+.table-head {
+    padding: 9px 8px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--ink-2);
+    border-bottom: 1px solid var(--rule);
+}
+.assign-row {
+    padding: 8px 8px;
+    border-bottom: 1px dotted var(--rule-2);
+    transition: background 0.15s ease;
+}
+.assign-row:hover {
+    background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.assign-row input[type="text"] {
+    border-color: transparent;
+    background: transparent;
+    font-weight: 500;
+    padding: 5px 6px;
+}
+.assign-row input[type="text"]:hover {
+    border-color: var(--rule-2);
+}
+
+.assign-row .input-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.assign-row input[type="number"] {
+    width: 62px;
+    padding: 5px 6px;
+    font-size: 0.9rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.assign-row input[type="number"][data-a-pct]:not(:placeholder-shown),
+.assign-row input[type="number"][data-a-pct]:focus {
+    border-color: var(--rule-2);
+}
+.unit {
+    color: var(--ink-2);
+    font-size: 0.78rem;
+}
+
+.a-stamp {
+    display: flex;
+    justify-content: center;
+}
+.assign-name {
+    font-weight: 500;
+}
+.assign-name .extra {
+    color: var(--margin);
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-left: 7px;
+}
+.assign-row .row-actions {
+    justify-content: flex-end;
+}
+.row-btn {
+    border: none;
+    background: transparent;
+    color: var(--ink-2);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-ctrl);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+.row-btn:hover {
+    background: color-mix(in srgb, var(--navy) 10%, transparent);
+    color: var(--navy);
+}
+.row-btn.danger:hover {
+    background: color-mix(in srgb, var(--margin) 10%, transparent);
+    color: var(--margin);
+}
+
+.assign-empty {
+    padding: 20px 8px;
+    text-align: center;
+    color: var(--ink-2);
+    font-size: 0.88rem;
+}
+
+.course-foot {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
 }
