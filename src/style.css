@@ -1,0 +1,402 @@
+/* ---------- 1. Design tokens ---------- */
+:root {
+    --paper: #f1f2ed;
+    --sheet: #fbfbf7;
+    --ink: #222c38;
+    --ink-2: #5e6873;
+    --rule: #d6d9cf;
+    --rule-2: #c3c8ba;
+
+    --navy: #2c4870;
+    --navy-hover: #22395c;
+    --on-navy: #fdfdfb;
+    --margin: #c73e3e;
+
+    --grade-a: #1e7a4f;
+    --grade-b: #5c8026;
+    --grade-c: #9a7d24;
+    --grade-d: #b8622a;
+    --grade-f: #c73e3e;
+
+    --shadow-sm: 0 1px 2px rgba(34, 44, 56, 0.05);
+    --shadow-lg: 0 18px 50px rgba(24, 30, 38, 0.22);
+
+    --r-sheet: 8px;
+    --r-ctrl: 6px;
+    --font-ui: "Archivo", system-ui, sans-serif;
+    --font-display: "Fraunces", Georgia, serif;
+}
+
+[data-theme="dark"] {
+    --paper: #161f1b;
+    --sheet: #1d2a24;
+    --ink: #e9ece5;
+    --ink-2: #a7b5aa;
+    --rule: #37493f;
+    --rule-2: #465b50;
+
+    --navy: #f0f2ea;
+    --navy-hover: #dfe5d8;
+    --on-navy: #1a2420;
+    --margin: #d16363;
+
+    --grade-a: #83d6a4;
+    --grade-b: #b9d983;
+    --grade-c: #e0c368;
+    --grade-d: #e29968;
+    --grade-f: #e07f7f;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+/* ---------- 2. Base & layout ---------- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-ui);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.55;
+    min-height: 100vh;
+    transition:
+        background 0.25s ease,
+        color 0.25s ease;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+}
+
+section {
+    margin: 34px 0;
+}
+
+.section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.section-head h2 {
+    font-size: 1.3rem;
+}
+.section-sub {
+    color: var(--ink-2);
+    font-size: 0.88rem;
+}
+
+.muted {
+    color: var(--ink-2);
+}
+
+[hidden] {
+    display: none !important;
+}
+
+:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 2px;
+}
+
+/* ---------- 3. Header, buttons, inputs, stamps, tabs ---------- */
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--rule);
+    transition: background 0.25s ease;
+}
+.header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px;
+    flex-wrap: wrap;
+}
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.brand h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+/* The brand mark echoes the stamp motif */
+.brand-stamp {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    position: relative;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+    opacity: 0.85;
+    transform: rotate(-6deg);
+}
+.brand-stamp::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border: 1px solid var(--ink);
+    border-radius: inherit;
+    opacity: 0.6;
+}
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font: 600 0.9rem var(--font-ui);
+    padding: 9px 16px;
+    min-height: 38px;
+    border-radius: var(--r-ctrl);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.12s ease;
+    white-space: nowrap;
+}
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn-primary {
+    background: var(--navy);
+    color: var(--on-navy);
+}
+.btn-primary:hover {
+    background: var(--navy-hover);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--rule-2);
+}
+.btn-ghost:hover {
+    border-color: var(--ink-2);
+    background: transparent;
+}
+
+.btn-danger {
+    background: var(--grade-f);
+    color: #fff;
+}
+.btn-danger:hover {
+    filter: brightness(0.94);
+}
+
+.icon-btn {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--rule-2);
+    border-radius: var(--r-ctrl);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition:
+        border-color 0.18s ease,
+        color 0.18s ease;
+}
+.icon-btn:hover {
+    border-color: var(--ink);
+}
+
+.icon-sun,
+.icon-moon {
+    display: none;
+}
+[data-theme="light"] .icon-moon {
+    display: block;
+}
+[data-theme="dark"] .icon-sun {
+    display: block;
+}
+
+/* Inputs — squared, quiet, ink-friendly */
+label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.optional {
+    font-weight: 400;
+    opacity: 0.7;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+    font: 400 0.95rem var(--font-ui);
+    width: 100%;
+    padding: 9px 11px;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--rule-2);
+    border-radius: var(--r-ctrl);
+    outline: none;
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+input:focus,
+select:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--navy) 16%, transparent);
+}
+input::placeholder {
+    color: var(--ink-2);
+    opacity: 0.65;
+}
+
+[data-theme="light"] select option {
+    color: var(--ink);
+    background: var(--sheet);
+}
+
+.field {
+    margin-bottom: 14px;
+    flex: 1;
+    min-width: 0;
+}
+.field-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.field-row .field {
+    flex: 1 1 150px;
+}
+.inline-inputs {
+    display: flex;
+    gap: 8px;
+}
+.inline-inputs input:first-child {
+    flex: 2;
+}
+.inline-inputs input:last-child {
+    flex: 1;
+}
+.form-hint {
+    font-size: 0.8rem;
+    color: var(--ink-2);
+    margin: -4px 0 10px;
+}
+
+/* Method & mode switches: tabs underlined by the red pen */
+.seg {
+    display: inline-flex;
+    gap: 18px;
+    background: none;
+    padding: 0;
+    margin: 0 0 4px;
+}
+.seg-btn {
+    font: 600 0.88rem var(--font-ui);
+    padding: 4px 2px 7px;
+    border: none;
+    background: none;
+    color: var(--ink-2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition:
+        color 0.18s ease,
+        border-color 0.18s ease;
+}
+.seg-btn:hover {
+    color: var(--ink);
+}
+.seg-btn.active {
+    color: var(--ink);
+    border-color: var(--margin);
+}
+
+/* The letter-grade stamp — the one bold element */
+.stamp {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--ink);
+    opacity: 0.92;
+    transform: rotate(-5deg);
+}
+.stamp::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border: 1px solid currentColor;
+    border-radius: inherit;
+    opacity: 0.55;
+}
+.stamp-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 0.82rem;
+    border-width: 1.5px;
+}
+.stamp-sm::after {
+    inset: 2.5px;
+}
+.stamp-xs {
+    width: 26px;
+    height: 26px;
+    font-size: 0.68rem;
+    border-width: 1.5px;
+}
+.stamp-xs::after {
+    inset: 2px;
+}
+.stamp-empty {
+    border-style: dashed;
+    opacity: 0.45;
+    color: var(--ink-2);
+}
+.stamp-empty::after {
+    display: none;
+}
