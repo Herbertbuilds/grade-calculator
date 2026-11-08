@@ -715,3 +715,189 @@ listEl.addEventListener("change", (e) => {
 });
 
 /* ---------- What-If calculator ---------- */
+function openWhatIf(courseId) {
+    const course = state.courses.find((c) => c.id === courseId);
+    if (!course) return;
+    $("#wiCourseId").value = courseId;
+    const exam = isExamCourse(course) && examOf(course);
+    const note = $("#wiExamNote");
+
+    // Exam-based courses: the question is always about the 60% exam itself
+    if (exam) {
+        if (exam.pct == null) {
+            note.hidden = false;
+            note.textContent =
+                "The final exam holds 60% of this course. Its grade is what the calculator works out.";
+            $("#wiWeightField").hidden = true;
+            $("#wiWeight").value = "60";
+        } else {
+            note.hidden = false;
+            note.textContent = `The exam is already graded at ${fmtPct(exam.pct)} — the final grade is fixed at ${fmtPct(courseCalc(course).pct)}. Enter the expected score to see what it would become if you re-took it.`;
+            $("#wiWeightField").hidden = true;
+            $("#wiWeight").value = "60";
+        }
+    } else {
+        note.hidden = true;
+        $("#wiWeightField").hidden = false;
+        $("#wiWeight").value = "";
+    }
+
+    $("#wiTargetFields").hidden = false;
+    $("#wiTryFields").hidden = true;
+    setWiMode("target");
+    $("#wiTarget").value = "90";
+    $("#wiCustom").value = "";
+    $("#wiCustomWrap").hidden = true;
+    $("#wiExpect").value = "";
+    $("#wiResult").innerHTML =
+        `<p class="muted">Fill in the details to see the result.</p>`;
+    $("#wiResult").className = "wi-result";
+    openModal($("#whatIfModal"));
+}
+
+function setWiMode(mode) {
+    $("#wiTargetFields").hidden = mode !== "target";
+    $("#wiTryFields").hidden = mode !== "try";
+    $$("#wiModeSeg .seg-btn").forEach((b) => {
+        const active = b.dataset.mode === mode;
+        b.classList.toggle("active", active);
+        b.setAttribute("aria-selected", active);
+    });
+}
+
+$("#wiModeSeg").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-mode]");
+    if (btn) setWiMode(btn.dataset.mode);
+});
+$("#wiTarget").addEventListener("change", () => {
+    $("#wiCustomWrap").hidden = $("#wiTarget").value !== "custom";
+});
+$("#whatIfForm").addEventListener("input", runWhatIf);
+$("#whatIfForm").addEventListener("change", runWhatIf);
+
+function runWhatIf() {
+    const course = state.courses.find((c) => c.id === $("#wiCourseId").value);
+    const box = $("#wiResult");
+    if (!course) return;
+
+    const examCourse = isExamCourse(course);
+    const calc = courseCalc(course);
+    const mode = $$("#wiModeSeg .seg-btn.active")[0]?.dataset.mode || "target";
+
+    // Exam course: What-If is always about the exam (60% of final)
+    if (examCourse) {
+        const cwWeightedAvg = calc.cwWeightedAvg; // coursework average on 100% scale
+        const examGraded = calc.examPending === false; // exam has a grade
+
+        if (mode === "target") {
+            let G;
+            if ($("#wiTarget").value === "custom")
+                G = parseFloat($("#wiCustom").value);
+            else G = parseFloat($("#wiTarget").value);
+            if (isNaN(G)) {
+                box.className = "wi-result";
+                box.innerHTML = `<p class="muted">Choose a target grade.</p>`;
+                return;
+            }
+
+            // Solve: final = cwWeightedAvg × 0.4 + exam × 0.6 = G
+            // => exam = (G - cwWeightedAvg × 0.4) / 0.6
+            const cwContrib = (cwWeightedAvg || 0) * 0.4;
+            const neededExam =
+                cwWeightedAvg != null ? (G - cwContrib) / 0.6 : G / 0.6;
+            const G2 = letterFor(G);
+            const cwNote =
+                cwWeightedAvg != null
+                    ? ` (coursework averaging ${fmtPct(cwWeightedAvg)} × 0.4 = ${fmtPct(cwContrib)})`
+                    : " (no coursework graded yet)";
+
+            if (neededExam <= 0) {
+                box.className = "wi-result win";
+                box.innerHTML = `<div class="big" style="color:var(--grade-a)">Target locked in <span class="stamp stamp-xs" style="color:${G2.color}">${G2.letter}</span></div>
+          <div class="line2">A ${fmtPct(G)} final is already safe, even with <b>0%</b> on the exam.${cwNote}</div>`;
+            } else if (neededExam <= 100) {
+                box.className = "wi-result win";
+                box.innerHTML = `<div class="big" style="color:var(--grade-a)">Score ${fmt1(neededExam)}% <span class="stamp stamp-xs" style="color:${G2.color}">${G2.letter}</span></div>
+          <div class="line2">That is the exam score you need to finish at <b>${fmtPct(G)}</b>.${cwNote}</div>`;
+            } else {
+                box.className = "wi-result fail";
+                box.innerHTML = `<div class="big" style="color:var(--grade-f)">Out of reach</div>
+          <div class="line2">You would need <b>${fmt1(neededExam)}%</b> on the exam. Even with 100% on the exam, the final maxes at <b>${fmt1(cwContrib + 60)}%</b>.${cwNote}</div>`;
+            }
+            return;
+        } else {
+            // Try mode: what final if I score X on exam?
+            const p = parseFloat($("#wiExpect").value);
+            if (isNaN(p)) {
+                box.className = "wi-result";
+                box.innerHTML = `<p class="muted">Fill in the exam score to see the result.</p>`;
+                return;
+            }
+            const proj =
+                cwWeightedAvg != null ? cwWeightedAvg * 0.4 + p * 0.6 : p * 0.6;
+            const LP = letterFor(proj);
+            const diff = calc.pct != null ? fmt1(proj - calc.pct) : 0;
+            box.className = "wi-result win";
+            box.innerHTML = `<div class="big" style="color:${LP.color}">${fmtPct(proj)} <span class="stamp stamp-xs" style="color:${LP.color}">${LP.letter}</span></div>
+        <div class="line2">Scoring <b>${fmt1(p)}%</b> on the exam projects a final of <b>${fmtPct(proj)}</b>${calc.pct != null ? ` (${diff >= 0 ? "+" : ""}${diff} pts vs now)` : ""}.</div>`;
+            return;
+        }
+    }
+
+    // Standard course: scaled to whole course (100%)
+    const w = parseFloat($("#wiWeight").value);
+    if (isNaN(w) || w <= 0) {
+        box.className = "wi-result";
+        box.innerHTML = `<p class="muted">Fill in the weight and details to see the result.</p>`;
+        return;
+    }
+
+    const banked = calc.contribution; // Σ weight×grade ÷ 100 = points banked so far
+    const onWhat = `on this ${fmt1(w)}%-weight assessment`;
+    const onWhatScore = "grade on this assessment";
+
+    if (mode === "target") {
+        let G;
+        if ($("#wiTarget").value === "custom")
+            G = parseFloat($("#wiCustom").value);
+        else G = parseFloat($("#wiTarget").value);
+        if (isNaN(G)) {
+            box.className = "wi-result";
+            box.innerHTML = `<p class="muted">Choose a target grade.</p>`;
+            return;
+        }
+
+        // Solve:  banked + (w × p ÷ 100) = G
+        const neededPct = (G - banked) / (w / 100);
+        const bestPossible = banked + w; // perfect score on this assessment, out of 100
+        const G2 = letterFor(G);
+        if (neededPct <= 0) {
+            box.className = "wi-result win";
+            box.innerHTML = `<div class="big" style="color:var(--grade-a)">Target locked in <span class="stamp stamp-xs" style="color:${G2.color}">${G2.letter}</span></div>
+        <div class="line2">A ${fmtPct(G)} final is already safe, even with <b>0%</b> ${onWhat}.</div>`;
+        } else if (neededPct <= 100) {
+            box.className = "wi-result win";
+            box.innerHTML = `<div class="big" style="color:var(--grade-a)">Score ${fmt1(neededPct)}% <span class="stamp stamp-xs" style="color:${G2.color}">${G2.letter}</span></div>
+        <div class="line2">That is the ${onWhatScore} you need to finish at <b>${fmtPct(G)}</b>.${bestPossible < G ? ` (You currently have ${fmtPct(banked)} banked and can reach at most ${fmtPct(bestPossible)})` : ""}</div>`;
+        } else {
+            box.className = "wi-result fail";
+            box.innerHTML = `<div class="big" style="color:var(--grade-f)">Out of reach</div>
+        <div class="line2">You would need <b>${fmt1(Math.min(neededPct, 999))}%</b>. Even with 100% ${onWhat}, the final caps at <b>${fmt1(Math.min(bestPossible, 100))}%</b>${bestPossible < G ? `, short of your ${fmtPct(G)} target` : ""}.</div>`;
+        }
+        return;
+    }
+
+    /* ----- "Try a score" mode (standard courses) ----- */
+    const p = parseFloat($("#wiExpect").value);
+    if (isNaN(p)) {
+        box.className = "wi-result";
+        box.innerHTML = `<p class="muted">Enter the score you expect.</p>`;
+        return;
+    }
+    const proj = banked + (w * p) / 100;
+    const LP = letterFor(proj);
+    const diff = fmt1(proj - calc.pct);
+    box.className = "wi-result win";
+    box.innerHTML = `<div class="big" style="color:${LP.color}">${fmtPct(proj)} <span class="stamp stamp-xs" style="color:${LP.color}">${LP.letter}</span></div>
+    <div class="line2">Scoring <b>${fmt1(p)}%</b> ${onWhat} projects a final of <b>${fmtPct(proj)}</b> (${diff >= 0 ? "+" : ""}${diff} points vs now).</div>`;
+}
