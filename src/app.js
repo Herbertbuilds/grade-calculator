@@ -233,3 +233,205 @@ function courseCalc(course) {
         gradedCount,
     };
 }
+
+/* ---------- Rendering ---------- */
+function renderAll() {
+    ensureExams();
+    renderTranscript();
+    renderCourses();
+}
+
+/**
+ * The semester summary sheet: the running average as the headline number,
+ * then one dotted-leader ledger row per course.
+ */
+function renderTranscript() {
+    const sec = $("#transcriptSection");
+    const courses = state.courses;
+    if (!courses.length) {
+        sec.hidden = true;
+        sec.innerHTML = "";
+        return;
+    }
+
+    const scored = courses
+        .map((c) => ({ c, calc: courseCalc(c) }))
+        .filter((g) => g.calc.pct != null);
+    const avg = scored.length
+        ? scored.reduce((s, g) => s + g.calc.pct, 0) / scored.length
+        : null;
+    const best = scored.length
+        ? scored.reduce((a, b) => (b.calc.pct > a.calc.pct ? b : a))
+        : null;
+    const nItems = courses.reduce((s, c) => s + c.assignments.length, 0);
+    const avgL = letterFor(avg);
+
+    const summaryText =
+        `${courses.length} course${courses.length === 1 ? "" : "s"}, ${nItems} item${nItems === 1 ? "" : "s"} logged` +
+        (best
+            ? `. Best so far: ${esc(best.c.name)} at ${fmtPct(best.calc.pct)}`
+            : "") +
+        (avg == null ? ". Add graded work to see the average" : "");
+
+    const rows = courses
+        .map((course, i) => {
+            const calc = courseCalc(course);
+            const L = letterFor(calc.pct);
+            const base = baseline[course.id];
+            let delta = "";
+            if (calc.pct != null && base != null) {
+                const d = fmt1(calc.pct - base);
+                if (d > 0) delta = `<span class="delta up">▲ ${d}</span>`;
+                else if (d < 0)
+                    delta = `<span class="delta down">▼ ${Math.abs(d)}</span>`;
+            }
+            const sub =
+                `${calc.gradedCount} of ${course.assignments.length} graded` +
+                (isExamCourse(course) && examOf(course)?.pct == null
+                    ? ", exam pending"
+                    : "");
+            const empty = calc.pct == null ? " stamp-empty" : "";
+            return `
+      <li>
+        <button class="ledger-row" data-goto="${course.id}" aria-label="Open ${esc(course.name)}">
+          <span class="ledger-name">${esc(course.name)}
+            ${course.term ? `<span class="ledger-term">${esc(course.term)}</span>` : ""}
+          </span>
+          <span class="leader" aria-hidden="true"></span>
+          <span class="ledger-sub">${sub}</span>
+          <span class="ledger-pct" style="color:${calc.pct == null ? "var(--ink-2)" : L.color}">${fmtPct(calc.pct)}</span>
+          <span class="stamp stamp-sm${empty}" style="--d:${i * 60}ms; color:${L.color}">${L.letter}</span>
+          ${L.label ? `<span class="grade-label" style="color:${L.color}">${esc(L.label)}</span>` : ""}
+          ${delta}
+        </button>
+      </li>`;
+        })
+        .join("");
+
+    sec.hidden = false;
+    sec.innerHTML = `
+    <div class="sheet transcript">
+      <div class="transcript-head">
+        <div class="transcript-average">
+          <span class="big-pct" style="color:${avgL.color}">${fmtPct(avg)}</span>
+          <span class="stamp${avg == null ? " stamp-empty" : ""}" style="--d:120ms; color:${avgL.color}">${avgL.letter}</span>
+        </div>
+        <div class="transcript-info">
+          <h2>Semester summary</h2>
+          <p>${summaryText}</p>
+        </div>
+      </div>
+      <ol class="ledger">${rows}</ol>
+    </div>`;
+}
+
+function renderCourses() {
+    const list = $("#courseList");
+    const empty = $("#emptyState");
+    const has = state.courses.length > 0;
+    if (empty) empty.hidden = has;
+    list.innerHTML = state.courses.map(buildCourseCard).join("");
+}
+
+/* Weight validation: exam courses need coursework weights to total 40% */
+function weightsOk(course, calc) {
+    if (isExamCourse(course)) {
+        return Math.abs(calc.cwWeightsTotal - 40) < 0.5;
+    }
+    return Math.abs(calc.weightsTotal - 100) < 0.5;
+}
+
+function weightsWarnText(course, calc) {
+    if (isExamCourse(course)) {
+        return `Coursework weights total ${fmt1(calc.cwWeightsTotal)}%, but they should come to 40% (the exam holds the other 60%)`;
+    }
+    return `Weights total ${fmt1(calc.weightsTotal)}%, but they should come to 100%`;
+}
+
+function buildCourseCard(course) {
+    const calc = courseCalc(course);
+    const L = letterFor(calc.pct);
+    const isOpen = course.open !== false;
+    const exam = isExamCourse(course);
+    const share = cwShare(course);
+
+    const weightLine =
+        course.assignments.length && !weightsOk(course, calc)
+            ? `<div class="method-bar"><span class="weights-warn">${weightsWarnText(course, calc)}</span></div>`
+            : exam && calc.examPending
+              ? `<div class="method-bar"><span class="method-note">Coursework (weighted, ×0.4) + final exam (×0.6) = final grade</span></div>`
+              : "";
+
+    const rows = course.assignments.length
+        ? course.assignments.map((a) => assignRow(a, exam)).join("")
+        : `<div class="assign-empty">Nothing logged yet. Add the first assessment below.</div>`;
+
+    const assignSection = `
+    <div class="assignment-list">
+      <div class="table-head">
+        <span>Assessment</span><span>Weight</span><span>Grade</span><span></span><span></span>
+      </div>
+      ${rows}
+    </div>`;
+
+    return `
+    <article class="course-card ${isOpen ? "open" : ""}" id="course-${course.id}" data-course="${course.id}">
+      <div class="course-head" data-toggle>
+        <div class="course-title">
+          <h3>${esc(course.name)}</h3>
+          ${course.term ? `<span class="term">${esc(course.term)}</span>` : ""}
+        </div>
+        <div class="course-grade">
+          <span class="course-pct" style="color:${calc.pct == null ? "var(--ink-2)" : L.color}">${fmtPct(calc.pct)}</span>
+          <span class="stamp stamp-sm${calc.pct == null ? " stamp-empty" : ""}" style="color:${L.color}">${L.letter}</span>
+          ${L.label ? `<span class="grade-label" style="color:${L.color}">${esc(L.label)}</span>` : ""}
+        </div>
+        <div class="course-actions">
+          <button type="button" class="row-btn" data-edit-course title="Edit course" aria-label="Edit course">${ICONS.edit || ""}</button>
+          <button type="button" class="row-btn danger" data-del-course title="Delete course" aria-label="Delete course">${ICONS.trash}</button>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path fill="currentColor" d="M7.4 8.6 12 13.2l4.6-4.6L18 10l-6 6-6-6 1.4-1.4Z"/>
+        </svg>
+      </div>
+      <div class="course-body">
+        ${weightLine}
+        ${assignSection}
+        <div class="course-foot">
+          <button type="button" class="btn btn-primary" data-add-assign>
+            ${ICONS.plus}
+            <span>Add assessment</span>
+          </button>
+          <button type="button" class="btn btn-ghost" data-whatif>What-if calculator</button>
+        </div>
+      </div>
+    </article>`;
+}
+
+function assignRow(a, isExamCourse) {
+    const L = letterFor(a.pct);
+    const stamp =
+        a.pct == null
+            ? `<span class="stamp stamp-xs stamp-empty">–</span>`
+            : `<span class="stamp stamp-xs" style="color:${L.color}">${L.letter}</span>`;
+
+    // Exam courses: no weight column for coursework — assessments are entered on a 100% scale
+    // and internally count as 40% of the final. The exam is separate at 60%.
+    const weightCell = a.exam
+        ? `<span class="input-cell"><input type="number" value="${fmt1(a.weight)}"
+        data-a-weight-exam disabled title="The exam always counts 60%" aria-label="Exam weight (fixed)" /><span class="unit">%</span></span>`
+        : `<span class="input-cell a-weight"><input type="number" min="0" max="100" step="0.5" value="${fmt1(a.weight)}"
+        data-a-weight aria-label="Weight %" /><span class="unit">%</span></span>`;
+    return `
+    <div class="assign-row" data-assign="${a.id}">
+      <input class="a-name" type="text" value="${esc(a.name)}" maxlength="60" data-a-name aria-label="Assessment name" />
+      ${weightCell}
+      <span class="input-cell a-grade"><input type="number" min="0" max="200" step="0.5"
+        value="${a.pct == null ? "" : fmt1(a.pct)}" placeholder="—"
+        data-a-pct aria-label="Grade %" /><span class="unit">%</span></span>
+      <span class="a-stamp">${stamp}</span>
+      <span class="row-actions a-actions">
+        <button type="button" class="row-btn danger" data-del-assign="${a.id}" title="Delete" aria-label="Delete ${esc(a.name)}">${ICONS.trash}</button>
+      </span>
+    </div>`;
+}
