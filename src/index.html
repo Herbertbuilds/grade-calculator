@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Grade Calculator</title>
+        <meta
+            name="description"
+            content="Track your course grades with weighted categories or total points, and find out what you need on the final."
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <!--HEADER-->
+        <header class="site-header">
+            <div class="container header-inner">
+                <div class="brand">
+                    <span class="brand-stamp" aria-hidden="true">G</span>
+                    <h1>Grade Calculator</h1>
+                </div>
+                <div class="header-actions">
+                    <button
+                        class="btn btn-primary"
+                        id="btnAddCourse"
+                        type="button"
+                    >
+                        <svg
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            aria-hidden="true"
+                        >
+                            <path
+                                fill="currentColor"
+                                d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"
+                            />
+                        </svg>
+                        <span>Add Course</span>
+                    </button>
+                    <button
+                        class="icon-btn"
+                        id="btnTheme"
+                        type="button"
+                        aria-label="Toggle dark mode"
+                        title="Toggle theme"
+                    >
+                        <svg
+                            class="icon-sun"
+                            viewBox="0 0 24 24"
+                            width="20"
+                            height="20"
+                            aria-hidden="true"
+                        >
+                            <path
+                                fill="currentColor"
+                                d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-15 2.4 2.4-2.4.6-2.4-.6L12 2Zm0 20-2.4-2.4 2.4-.6 2.4.6L12 22ZM2 12l2.4-2.4.6 2.4-.6 2.4L2 12Zm20 0-2.4 2.4-.6-2.4.6-2.4L22 12ZM4.9 4.9l3.3.9-2.4 2.4-.9-3.3Zm14.2 14.2-3.3-.9 2.4-2.4.9 3.3ZM4.9 19.1l.9-3.3 2.4 2.4-3.3.9ZM19.1 4.9l-.9 3.3-1.5-2.4.9-1.5 1.5-.9-.9 1.5Z"
+                            />
+                        </svg>
+                        <svg
+                            class="icon-moon"
+                            viewBox="0 0 24 24"
+                            width="20"
+                            height="20"
+                            aria-hidden="true"
+                        >
+                            <path
+                                fill="currentColor"
+                                d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <section
+                id="transcriptSection"
+                hidden
+                aria-label="Semester summary"
+            ></section>
+
+            <!--COURSE SHEETS-->
+            <section aria-labelledby="coursesHeading">
+                <div class="section-head">
+                    <h2 id="coursesHeading">Courses</h2>
+                    <span class="section-sub"
+                        >Select a course to log its graded work</span
+                    >
+                </div>
+                <div id="courseList" class="course-list"></div>
+
+                <!-- Empty state -->
+                <div class="empty-state" id="emptyState">
+                    <h3>No courses yet</h3>
+                    <p>
+                        Add a course, then log its graded work. The semester
+                        summary fills itself in.
+                    </p>
+                    <div class="empty-actions">
+                        <button
+                            class="btn btn-primary"
+                            id="btnAddCourseEmpty"
+                            type="button"
+                        >
+                            Add a course
+                        </button>
+                        <button
+                            class="btn btn-ghost"
+                            id="btnSample"
+                            type="button"
+                        >
+                            Load a sample semester
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="site-footer">
+                <p>
+                    Everything saves in your browser, and never leaves this
+                    device.
+                </p>
+            </footer>
+        </main>
+
+        <!--COURSE MODAL-->
+        <div
+            class="modal-overlay"
+            id="courseModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="courseModalTitle"
+            hidden
+        >
+            <div class="modal">
+                <div class="modal-head">
+                    <h3 id="courseModalTitle">Add course</h3>
+                    <button
+                        class="icon-btn modal-close"
+                        data-close
+                        type="button"
+                        aria-label="Close"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <form id="courseForm" novalidate>
+                    <input type="hidden" id="courseId" />
+                    <div class="field">
+                        <label for="courseType">Course type</label>
+                        <div class="seg" id="courseTypeSeg">
+                            <button
+                                class="seg-btn active"
+                                type="button"
+                                data-type="standard"
+                            >
+                                Coursework only
+                            </button>
+                            <button
+                                class="seg-btn"
+                                type="button"
+                                data-type="exam"
+                            >
+                                With final exam
+                            </button>
+                        </div>
+                        <p class="form-hint" id="typeHint">
+                            Assessments add up to the final grade.
+                        </p>
+                    </div>
+                    <div class="field">
+                        <label for="courseName">Course name</label>
+                        <input
+                            type="text"
+                            id="courseName"
+                            placeholder="e.g. Calculus II"
+                            maxlength="60"
+                            required
+                        />
+                    </div>
+                    <div class="field">
+                        <label for="courseSemester"
+                            >Term
+                            <span class="optional">(optional)</span></label
+                        >
+                        <input
+                            type="text"
+                            id="courseSemester"
+                            placeholder="e.g. Fall 2026"
+                            maxlength="30"
+                        />
+                    </div>
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" type="button" data-close>
+                            Cancel
+                        </button>
+                        <button
+                            class="btn btn-primary"
+                            type="submit"
+                            id="courseSave"
+                        >
+                            Save course
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ============ WHAT-IF MODAL ============ -->
+        <div
+            class="modal-overlay"
+            id="whatIfModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="whatIfModalTitle"
+            hidden
+        >
+            <div class="modal">
+                <div class="modal-head">
+                    <h3 id="whatIfModalTitle">What-If calculator</h3>
+                    <button
+                        class="icon-btn modal-close"
+                        data-close
+                        type="button"
+                        aria-label="Close"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <form id="whatIfForm" novalidate>
+                    <input type="hidden" id="wiCourseId" />
+                    <p class="modal-lede" id="wiCourseLabel"></p>
+                    <p class="modal-lede" id="wiExamNote" hidden></p>
+
+                    <div class="seg" id="wiModeSeg" role="tablist">
+                        <button
+                            class="seg-btn active"
+                            type="button"
+                            data-mode="target"
+                            role="tab"
+                            aria-selected="true"
+                        >
+                            Score needed
+                        </button>
+                        <button
+                            class="seg-btn"
+                            type="button"
+                            data-mode="try"
+                            role="tab"
+                            aria-selected="false"
+                        >
+                            Try a score
+                        </button>
+                    </div>
+
+                    <!-- Target mode fields -->
+                    <div id="wiTargetFields">
+                        <div class="field">
+                            <label for="wiTarget">Target final grade</label>
+                            <select id="wiTarget">
+                                <option value="90">A — 90%</option>
+                                <option value="80">B — 80%</option>
+                                <option value="70">C — 70%</option>
+                                <option value="60">D — 60%</option>
+                                <option value="custom">Custom…</option>
+                            </select>
+                        </div>
+                        <div class="field" id="wiCustomWrap" hidden>
+                            <label for="wiCustom">Custom target (%)</label>
+                            <input
+                                type="number"
+                                id="wiCustom"
+                                min="0"
+                                max="200"
+                                step="0.5"
+                                placeholder="e.g. 85"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Try mode fields -->
+                    <div id="wiTryFields" hidden>
+                        <div class="field">
+                            <label for="wiExpect"
+                                >Expected score on it (%)</label
+                            >
+                            <input
+                                type="number"
+                                id="wiExpect"
+                                min="0"
+                                max="150"
+                                step="0.5"
+                                placeholder="e.g. 75"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="field" id="wiWeightField">
+                        <label for="wiWeight"
+                            >Weight of the assessment (%)</label
+                        >
+                        <input
+                            type="number"
+                            id="wiWeight"
+                            min="0.5"
+                            max="100"
+                            step="0.5"
+                            placeholder="e.g. 25"
+                        />
+                    </div>
+
+                    <div class="wi-result" id="wiResult" aria-live="polite">
+                        <p class="muted">
+                            Fill in the details to see the result.
+                        </p>
+                    </div>
+
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" type="button" data-close>
+                            Close
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!--CONFIRM MODAL-->
+        <div
+            class="modal-overlay"
+            id="confirmModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirmMsg"
+            hidden
+        >
+            <div class="modal modal-sm">
+                <div class="modal-head">
+                    <h3>Are you sure?</h3>
+                    <button
+                        class="icon-btn modal-close"
+                        data-close
+                        type="button"
+                        aria-label="Close"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <p class="confirm-msg" id="confirmMsg">
+                    This action cannot be undone.
+                </p>
+                <div class="modal-foot">
+                    <button class="btn btn-ghost" type="button" data-close>
+                        Cancel
+                    </button>
+                    <button
+                        class="btn btn-danger"
+                        type="button"
+                        id="confirmYes"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!--TOASTS-->
+        <div class="toasts" id="toasts" aria-live="polite"></div>
+        <div class="autosave-indicator" id="autosaveIndicator" hidden>
+            <svg
+                class="autosave-icon"
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+            >
+                <path
+                    fill="currentColor"
+                    d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2Z"
+                />
+            </svg>
+            <span>Saved</span>
+        </div>
+
+        <script src="app.js"></script>
+    </body>
+</html>
