@@ -94,7 +94,7 @@ grade-calculator/
 
 ## Design
 
-**"The Gradebook Ledger"**: exam paper, blue-black ink and a red marking pen. Fraunces handles the display type and the rubber-stamp letter grades, Archivo handles the interface, and dotted ledger leaders with a red margin rule carry the gradebook look. The full token system is in [`DESIGN.md`](DESIGN.md).
+**"The Gradebook Ledger"**: exam paper, blue-black ink and a red marking pen. Fraunces handles the display type and the rubber-stamp letter grades, Archivo handles the interface, and dotted ledger leaders with a red margin rule carry the gradebook look.
 
 <div align="center">
 <sub>Built by <a href="https://github.com/Herbertbuilds">Herbert Jantjies</a></sub>
