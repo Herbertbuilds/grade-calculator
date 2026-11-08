@@ -901,3 +901,112 @@ function runWhatIf() {
     box.innerHTML = `<div class="big" style="color:${LP.color}">${fmtPct(proj)} <span class="stamp stamp-xs" style="color:${LP.color}">${LP.letter}</span></div>
     <div class="line2">Scoring <b>${fmt1(p)}%</b> ${onWhat} projects a final of <b>${fmtPct(proj)}</b> (${diff >= 0 ? "+" : ""}${diff} points vs now).</div>`;
 }
+
+/* ---------- Theme, confirm, toasts, init ---------- */
+function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    state.theme = theme;
+    saveState();
+}
+$("#btnTheme").addEventListener("click", () => {
+    applyTheme(
+        document.documentElement.dataset.theme === "dark" ? "light" : "dark",
+    );
+});
+
+/* Confirm dialog */
+let confirmCb = null;
+function confirmDanger(message, cb) {
+    $("#confirmMsg").textContent = message;
+    confirmCb = cb;
+    openModal($("#confirmModal"));
+}
+$("#confirmYes").addEventListener("click", () => {
+    if (confirmCb) confirmCb();
+    confirmCb = null;
+    closeModal($("#confirmModal"));
+});
+
+/* Toasts */
+function toast(msg, type = "ok") {
+    const el = document.createElement("div");
+    el.className = `toast ${type === "warn" ? "warn" : ""}`;
+    el.textContent = msg;
+    $("#toasts").appendChild(el);
+    setTimeout(() => {
+        el.classList.add("out");
+        setTimeout(() => el.remove(), 320);
+    }, 2600);
+}
+
+/* Buttons + init */
+$("#btnAddCourse").addEventListener("click", () => openCourseModal());
+$("#btnAddCourseEmpty")?.addEventListener("click", () => openCourseModal());
+
+function loadSampleData() {
+    confirmDanger(
+        "Replace your current courses with the sample semester?",
+        () => {
+            // Standard course: weighted assessments (total 100%)
+            const cs = {
+                id: uid(),
+                name: "CS 101",
+                term: "Fall 2026",
+                type: "standard",
+                open: true,
+                assignments: [
+                    { id: uid(), name: "Homework 1", weight: 10, pct: 95 },
+                    { id: uid(), name: "Homework 2", weight: 10, pct: 96 },
+                    { id: uid(), name: "Quiz 1", weight: 20, pct: 80 },
+                    { id: uid(), name: "Project 1", weight: 20, pct: 92 },
+                    { id: uid(), name: "Midterm", weight: 15, pct: 78 },
+                    { id: uid(), name: "Final exam", weight: 25, pct: null },
+                ],
+            };
+            // Exam course: coursework weights should total 40%, exam is 60%
+            const hist = {
+                id: uid(),
+                name: "World History",
+                term: "Fall 2026",
+                type: "exam",
+                open: false,
+                assignments: [
+                    { id: uid(), name: "Essay 1", weight: 10, pct: 88 },
+                    { id: uid(), name: "Map quiz", weight: 10, pct: 90 },
+                    { id: uid(), name: "Midterm", weight: 20, pct: 80 },
+                    {
+                        id: uid(),
+                        name: "Final exam",
+                        weight: 60,
+                        pct: null,
+                        exam: true,
+                    },
+                ],
+            };
+            state.courses = [cs, hist];
+            saveState();
+            baseline = {};
+            for (const c of state.courses) baseline[c.id] = courseCalc(c).pct;
+            renderAll();
+            toast("Sample semester loaded (with an ungraded final to try)");
+            const el = $("#course-" + cs.id);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        },
+    );
+}
+$("#btnSample").addEventListener("click", loadSampleData);
+
+function init() {
+    loadState();
+    applyTheme(
+        state.theme ||
+            (matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light"),
+    );
+    renderAll();
+    // One orchestrated moment: stamps press in on load, then stop.
+    document.body.classList.add("boot");
+    setTimeout(() => document.body.classList.remove("boot"), 1300);
+}
+init();
