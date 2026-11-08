@@ -928,3 +928,179 @@ input::placeholder {
     font-size: 0.8rem;
     padding: 30px 0 40px;
 }
+
+/* ---------- 7. Motion: one orchestrated moment ---------- */
+/* Stamps press in once, on load; body.boot is removed after ~1.3s
+   so later re-renders never replay the animation. */
+@media (prefers-reduced-motion: no-preference) {
+    body.boot .stamp:not(.brand-stamp),
+    body.boot .ledger-row {
+        animation: stampIn 0.4s cubic-bezier(0.2, 0.85, 0.3, 1.15) backwards;
+        animation-delay: var(--d, 0ms);
+    }
+    @keyframes stampIn {
+        from {
+            opacity: 0;
+            transform: rotate(-5deg) scale(1.5);
+        }
+        60% {
+            opacity: 1;
+        }
+        to {
+            transform: rotate(-5deg) scale(1);
+        }
+    }
+    body.boot .ledger-row {
+        animation-name: rowIn;
+    }
+    @keyframes rowIn {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ---------- 8. Responsive ---------- */
+@media (max-width: 760px) {
+    .table-head {
+        display: none;
+    }
+    .assign-row {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "name  actions"
+            "weight grade"
+            "stamp  stamp";
+        row-gap: 6px;
+    }
+    .a-name {
+        grid-area: name;
+        min-width: 0;
+    }
+    .a-weight {
+        grid-area: weight;
+        justify-self: start;
+    }
+    .weight-static {
+        color: var(--ink-2);
+        font-size: 0.85rem;
+    }
+    .a-grade {
+        grid-area: grade;
+        justify-self: start;
+    }
+    .a-stamp {
+        grid-area: stamp;
+        justify-self: start;
+    }
+    .a-actions {
+        grid-area: actions;
+    }
+
+    .grade-label {
+        font-size: 0.7rem;
+        margin-left: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .transcript {
+        padding: 18px 16px 10px 42px;
+    }
+    .sheet::before,
+    .course-card::before {
+        left: 24px;
+    }
+    .course-head,
+    .course-body {
+        padding-left: 42px;
+    }
+    .big-pct {
+        font-size: 2.2rem;
+    }
+
+    .ledger-row {
+        flex-wrap: wrap;
+    }
+    .ledger-name {
+        flex: 1 1 100%;
+    }
+    .ledger-sub {
+        order: 4;
+    }
+    .leader {
+        order: 2;
+    }
+    .ledger-pct {
+        order: 3;
+    }
+    .ledger .delta {
+        order: 5;
+    }
+
+    .course-head {
+        padding: 13px 16px 13px 42px;
+    }
+    .course-body {
+        padding: 4px 16px 16px 42px;
+    }
+    .header-inner {
+        padding: 12px 16px;
+    }
+}
+
+@media (max-width: 430px) {
+    .header-actions .btn span {
+        display: none;
+    }
+    .header-actions .btn {
+        padding: 9px;
+    }
+    .course-grade {
+        min-width: 0;
+    }
+}
+
+/* Autosave indicator - fixed position bottom-right */
+.autosave-indicator {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--ink-2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+        opacity 0.2s,
+        transform 0.2s;
+    z-index: 100;
+}
+.autosave-indicator:not([hidden]) {
+    opacity: 1;
+    transform: translateY(0);
+}
+.autosave-icon {
+    color: var(--grade-a);
+}
