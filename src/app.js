@@ -435,3 +435,69 @@ function assignRow(a, isExamCourse) {
       </span>
     </div>`;
 }
+
+/* ---------- 5. Course & assignment editing ---------- */
+/* Generic modal helpers */
+function openModal(el) {
+    el.hidden = false;
+    requestAnimationFrame(() => el.classList.add("show"));
+    const first = el.querySelector("input, select");
+    if (first) setTimeout(() => first.focus(), 80);
+}
+function closeModal(el) {
+    el.classList.remove("show");
+    setTimeout(() => {
+        el.hidden = true;
+    }, 220);
+}
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") $$(".modal-overlay.show").forEach(closeModal);
+});
+$$(".modal-overlay").forEach((ov) => {
+    ov.addEventListener("click", (e) => {
+        if (e.target === ov || e.target.closest("[data-close]")) closeModal(ov);
+    });
+});
+
+/* ---- Course modal ---- */
+let editingCourseId = null;
+let draftType = "standard";
+
+$("#courseTypeSeg").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-type]");
+    if (!btn) return;
+    draftType = btn.dataset.type;
+    setTypeDraft(draftType);
+    $$("#courseTypeSeg .seg-btn").forEach((b) =>
+        b.classList.toggle("active", b.dataset.type === draftType),
+    );
+    $("#typeHint").textContent =
+        draftType === "exam"
+            ? "Coursework counts 40%, and the final exam holds the other 60%."
+            : "Assessments add up to the final grade.";
+});
+
+function setTypeDraft(type) {
+    draftType = type;
+}
+
+function openCourseModal(courseId = null) {
+    editingCourseId = courseId;
+    $("#courseModalTitle").textContent = courseId
+        ? "Edit course"
+        : "Add course";
+    $("#courseSave").textContent = courseId ? "Save changes" : "Add course";
+    $("#courseId").value = courseId || "";
+    const c = courseId ? state.courses.find((x) => x.id === courseId) : null;
+    $("#courseName").value = c ? c.name : "";
+    $("#courseSemester").value = c && c.term ? c.term : "";
+    draftType = c ? (c.type === "exam" ? "exam" : "standard") : "standard";
+    $$("#courseTypeSeg .seg-btn").forEach((b) =>
+        b.classList.toggle("active", b.dataset.type === draftType),
+    );
+    $("#typeHint").textContent =
+        draftType === "exam"
+            ? "Coursework counts 40%, and the final exam holds the other 60%."
+            : "Assessments add up to the final grade.";
+    openModal($("#courseModal"));
+}
