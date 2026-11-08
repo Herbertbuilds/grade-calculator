@@ -156,3 +156,80 @@ const ICONS = {
     edit: `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25ZM20.7 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>`,
     trash: `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3.5 6h13L17.6 20a2 2 0 0 1-2 1.8H8.4A2 2 0 0 1 6.4 20L5.5 9ZM10 11v6.5h1.5V11H10Zm2.5 0v6.5H14V11h-1.5Z"/></svg>`,
 };
+
+/* ---------- Grade math engine ---------- */
+function letterFor(pct) {
+    if (pct == null) return { letter: "—", color: "var(--ink-2)" };
+    if (pct >= 75)
+        return { letter: "D", color: "var(--grade-a)", label: "Distinction" };
+    if (pct >= 70)
+        return { letter: "M", color: "var(--grade-b)", label: "Merit" };
+    if (pct >= 60)
+        return { letter: "C", color: "var(--grade-c)", label: "Credit" };
+    if (pct >= 50)
+        return { letter: "P", color: "var(--grade-d)", label: "Pass" };
+    return { letter: "F", color: "var(--grade-f)", label: "Fail" };
+}
+
+function courseCalc(course) {
+    const isExam = isExamCourse(course);
+    const exam = examOf(course);
+    const cwItems = course.assignments.filter((a) => !a.exam);
+    const cwGraded = cwItems.filter((a) => a.pct != null);
+    const examGraded = exam && exam.pct != null;
+
+    if (isExam) {
+        // Coursework: weighted over its OWN weights, scaled to 40% of the course.
+        let cwContribution = 0,
+            cwWeight = 0,
+            cwWeightsTotal = 0;
+        for (const a of cwItems) {
+            cwWeightsTotal += a.weight;
+            if (a.pct != null) {
+                cwContribution += (a.weight * a.pct) / 100;
+                cwWeight += a.weight;
+            }
+        }
+        const cwWeightedAvg =
+            cwWeight > 0 ? (cwContribution / cwWeight) * 100 : null;
+        const cwBanked = cwWeightedAvg !== null ? cwWeightedAvg * 0.4 : null; // 40% share
+
+        // Exam: 60% of the course, counted only when graded.
+        const examBanked = examGraded ? exam.pct * 0.6 : 0;
+
+        const finalPct = cwBanked !== null ? cwBanked + examBanked : null;
+
+        return {
+            pct: finalPct,
+            contribution: finalPct,
+            gradedWeight: cwGraded.length + (examGraded ? 1 : 0),
+            weightsTotal: cwWeightsTotal,
+            gradedCount: cwGraded.length + (examGraded ? 1 : 0),
+            cwWeightedAvg, // weighted coursework average (0-100)
+            cwWeightsTotal, // total of all coursework weights
+            examContrib: examBanked,
+            examPending: exam && !examGraded,
+        };
+    }
+
+    // Standard: scale to whole course (100%).
+    let contribution = 0,
+        grading = 0,
+        weightsTotal = 0,
+        gradedCount = 0;
+    for (const a of course.assignments) {
+        weightsTotal += a.weight;
+        if (a.pct != null) {
+            contribution += (a.weight * a.pct) / 100;
+            grading += a.weight;
+            gradedCount++;
+        }
+    }
+    return {
+        pct: contribution > 0 ? contribution : null,
+        contribution,
+        gradedWeight: grading,
+        weightsTotal,
+        gradedCount,
+    };
+}
