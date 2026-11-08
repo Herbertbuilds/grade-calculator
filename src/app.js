@@ -436,7 +436,7 @@ function assignRow(a, isExamCourse) {
     </div>`;
 }
 
-/* ---------- 5. Course & assignment editing ---------- */
+/* ---------- Course & assignment editing ---------- */
 /* Generic modal helpers */
 function openModal(el) {
     el.hidden = false;
@@ -501,3 +501,217 @@ function openCourseModal(courseId = null) {
             : "Assessments add up to the final grade.";
     openModal($("#courseModal"));
 }
+
+$("#courseForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = $("#courseName").value.trim();
+    if (!name) {
+        toast("Give the course a name first.", "warn");
+        return;
+    }
+    const term = $("#courseSemester").value.trim();
+    const type = draftType === "exam" ? "exam" : "standard";
+
+    if (editingCourseId) {
+        const c = state.courses.find((x) => x.id === editingCourseId);
+        if (c) {
+            c.name = name;
+            c.term = term;
+            c.open = true;
+            setTypeDraft(type);
+            c.type = type;
+            if (type === "exam" && !examOf(c)) {
+                // Promote the biggest ungraded item to be the final exam, if any
+                const pending = c.assignments
+                    .filter((a) => !a.exam && a.pct == null)
+                    .sort((a, b) => b.weight - a.weight)[0];
+                if (pending) {
+                    pending.exam = true;
+                    pending.weight = 60;
+                }
+                ensureExams();
+            }
+        }
+        toast("Course updated");
+    } else {
+        state.courses.push({
+            id: uid(),
+            name,
+            term,
+            type,
+            assignments:
+                type === "exam"
+                    ? [
+                          {
+                              id: uid(),
+                              name: "Final exam",
+                              pct: null,
+                              weight: 60,
+                              exam: true,
+                          },
+                      ]
+                    : [],
+            open: true,
+        });
+        toast("Course added");
+    }
+    saveState();
+    closeModal($("#courseModal"));
+    renderAll();
+});
+
+/* ---- Delegated events on the course list ---- */
+const listEl = $("#courseList");
+
+listEl.addEventListener("click", (e) => {
+    const cardEl = e.target.closest(".course-card");
+    if (!cardEl) return;
+    const courseId = cardEl.dataset.course;
+    const course = state.courses.find((c) => c.id === courseId);
+    if (!course) return;
+    const t = e.target;
+
+    // Toggle open/close when clicking the header (but not its controls)
+    if (
+        t.closest("[data-toggle]") &&
+        !t.closest("button") &&
+        !t.closest("input")
+    ) {
+        course.open = !cardEl.classList.contains("open");
+        saveState();
+        cardEl.classList.toggle("open", course.open);
+        return;
+    }
+
+    if (t.closest("[data-edit-course]")) {
+        openCourseModal(courseId);
+        return;
+    }
+    if (t.closest("[data-del-course]")) {
+        confirmDanger(
+            `Delete “${course.name}” and all of its assignments?`,
+            () => {
+                state.courses = state.courses.filter((c) => c.id !== courseId);
+                saveState();
+                renderAll();
+                toast("Course deleted");
+            },
+        );
+        return;
+    }
+
+    if (t.closest("[data-whatif]")) {
+        openWhatIf(courseId);
+        return;
+    }
+
+    if (t.closest("[data-add-assign]")) {
+        // Exam courses: coursework weights should total 40% of final
+        // Standard courses: weights should total 100%
+        let remaining = 100;
+        if (isExamCourse(course)) {
+            const cwUsed = course.assignments
+                .filter((a) => !a.exam)
+                .reduce((s, a) => s + a.weight, 0);
+            remaining = Math.max(0, fmt1(40 - cwUsed));
+        } else {
+            const used = course.assignments
+                .filter((a) => !a.exam)
+                .reduce((s, a) => s + a.weight, 0);
+            remaining = Math.max(0, fmt1(100 - used));
+        }
+        const a = {
+            id: uid(),
+            name: `Assessment ${course.assignments.filter((x) => !x.exam).length + 1}`,
+            pct: null,
+            weight: remaining,
+        };
+        course.assignments.push(a);
+        course.open = true;
+        saveState();
+        renderAll();
+        const input = $(`.assign-row[data-assign="${a.id}"] [data-a-name]`);
+        if (input) {
+            input.focus();
+            input.select();
+        }
+        return;
+    }
+
+    const delBtn = t.closest("[data-del-assign]");
+    if (delBtn) {
+        const aid = delBtn.dataset.delAssign;
+        const a = course.assignments.find((x) => x.id === aid);
+        const isExamItem = a && a.exam;
+        confirmDanger(
+            isExamItem
+                ? `Delete the final exam? It will come back — the exam (60% of final) is required for this course.`
+                : `Delete assessment "${a ? a.name : ""}"?`,
+            () => {
+                course.assignments = course.assignments.filter(
+                    (x) => x.id !== aid,
+                );
+                ensureExams();
+                saveState();
+                renderAll();
+                toast(
+                    isExamItem
+                        ? "Final exam placeholder restored"
+                        : "Assessment deleted",
+                );
+            },
+        );
+        return;
+    }
+});
+
+// Inline editing: name, weight and grade commit on change (blur or Enter)
+listEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.closest(".assign-row input")) {
+        e.preventDefault();
+        e.target.blur(); // triggers the change handler
+    }
+});
+
+listEl.addEventListener("change", (e) => {
+    const input = e.target.closest(".assign-row input");
+    if (!input) return;
+    const row = input.closest(".assign-row");
+    const cardEl = input.closest(".course-card");
+    const course = state.courses.find((c) => c.id === cardEl.dataset.course);
+    const a =
+        course && course.assignments.find((x) => x.id === row.dataset.assign);
+    if (!a) return;
+
+    if (input.matches("[data-a-name]")) {
+        const v = input.value.trim();
+        if (v) {
+            a.name = v;
+            saveState();
+            renderTranscript();
+        } else input.value = a.name;
+        return;
+    }
+    if (input.matches("[data-a-weight]")) {
+        let w = parseFloat(input.value);
+        if (isNaN(w) || w < 0) w = 0;
+        if (w > 100) w = 100;
+        a.weight = w;
+        input.value = w;
+    }
+    if (input.matches("[data-a-pct]")) {
+        if (input.value === "") {
+            a.pct = null;
+        } else {
+            let p = parseFloat(input.value);
+            if (isNaN(p) || p < 0) p = 0;
+            if (p > 200) p = 200; // extra credit
+            a.pct = p;
+            input.value = p;
+        }
+    }
+    saveState();
+    renderAll();
+});
+
+/* ---------- What-If calculator ---------- */
