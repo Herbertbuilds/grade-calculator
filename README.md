@@ -6,6 +6,7 @@
 ![CSS3](https://img.shields.io/badge/CSS3-0d1117?style=for-the-badge&logo=css3&logoColor=00ff9c)
 ![JavaScript](https://img.shields.io/badge/JavaScript_ES6+-0d1117?style=for-the-badge&logo=javascript&logoColor=00ff9c)
 ![No build](https://img.shields.io/badge/dependencies-0-00ff9c?style=for-the-badge&labelColor=0d1117)
+[![Live demo](https://img.shields.io/badge/live_demo-open_in_browser-00ff9c?style=for-the-badge&logo=githubpages&logoColor=0d1117&labelColor=0d1117)](https://herbertbuilds.github.io/grade-calculator/)
 
 </div>
 
@@ -20,11 +21,11 @@ A responsive grade tracker in **pure vanilla HTML, CSS and JavaScript**. No fram
 ```console
 $ git clone https://github.com/Herbertbuilds/grade-calculator.git
 $ cd grade-calculator
-$ python3 -m http.server 8000
+$ python3 -m http.server 8000 --directory src
 # → http://localhost:8000
 ```
 
-No server needed either: opening `index.html` in any modern browser works too.
+No install step either: open `src/index.html` in any modern browser.
 
 ## What it does
 
@@ -86,15 +87,21 @@ Every grade (a course, the semester average, even a single assignment) gets a ru
 
 ```text
 grade-calculator/
-├── index.html    page structure + modals
-├── style.css     design tokens (light/dark), layout, components, breakpoints
-├── app.js        state, grade math, rendering, CRUD, What-If solver
-└── DESIGN.md     design rationale and notes
+├── src/
+│   ├── index.html   page structure + modals
+│   ├── style.css    design tokens (light/dark), layout, components, breakpoints
+│   └── app.js       state, grade math, rendering, CRUD, What-If solver
+├── tools/check.py   static checks: JS syntax, asset links, duplicate ids
+└── README.md
 ```
 
 ## Design
 
 **"The Gradebook Ledger"**: exam paper, blue-black ink and a red marking pen. Fraunces handles the display type and the rubber-stamp letter grades, Archivo handles the interface, and dotted ledger leaders with a red margin rule carry the gradebook look.
+
+## License
+
+MIT © 2026 Herbert Jantjies. See [LICENSE](LICENSE).
 
 <div align="center">
 <sub>Built by <a href="https://github.com/Herbertbuilds">Herbert Jantjies</a></sub>
